@@ -58,9 +58,8 @@ function showGallery(tab) {
   try {
   var id = tab.id;
   var pics = galleries[id];
-  var json = pics.off ? { type: 'show' } :
-            pics.port ? { type: 'hide' } :
-                        { type: 'list', urls: pics.urls, count: pics.count };
+  var json = pics.port ? { type: 'toggle' } :
+                         { type: 'list', urls: pics.urls, count: pics.count };
   var port = pics.port = pics.port || (function() {
     var port = chrome.tabs.connect(id, { name: 'cmd' });
     port.onDisconnect.addListener(function(json) {
@@ -68,7 +67,6 @@ function showGallery(tab) {
     });
     return port;
   })();
-  pics.off = pics.hasOwnProperty('off') ? !pics.off : false;
   port.postMessage(json);
   } catch(e) { alert('instant gallery: '+ e.message); }
 }
