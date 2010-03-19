@@ -54,16 +54,18 @@ function http_head(url, cb) {
   var xhr = new XMLHttpRequest();
   xhr.open("HEAD", url, true);
   xhr.onreadystatechange = function() {
-    if (xhr.readyState == 4) {
-      var headers = {};
-      xhr.getAllResponseHeaders()
-         .replace(/^\s*([^:\s]+)\s*:\s*([^\r\n]*)/gm, function(all, key, val) {
-        headers[key.toLowerCase().replace(/-/g,'_')] = val;
-      });
-      cb(headers, url);
-    }
+    if (xhr.readyState == 4)
+      cb(parse_headers(xhr.getAllResponseHeaders()), url);
   };
   xhr.send();
+}
+
+function parse_headers(raw) {
+  var headers = {};
+  raw.replace(/^\s*([^:\s]+)\s*:\s*([^\r\n]*)/gm, function(all, key, val) {
+    headers[key.toLowerCase().replace(/-/g,'_')] = val;
+  });
+  return headers;
 }
 
 var _slice = Array.prototype.slice;
