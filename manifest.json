@@ -1,14 +1,25 @@
 {
   "name": "Instant Gallery",
-  "version": "0.1",
+  "version": "0.2",
   "description": "Browse all pictures linnked from a web page at once via the arrow keys.",
   "icons": {
     "48":  "hannah-48.png",
     "128": "hannah-128.png"
   },
-  "browser_action": {
-    "default_icon": "hannah-48.png"
+  "background_page" : "background.html",
+  "page_action": {
+    "default_icon": "hannah-19.png",
+    "default_title": "Browse as photo gallery"
   },
+  "content_scripts": [{
+    "matches": [
+      "http://*/*",
+      "https://*/*"
+    ],
+    "js": ["$x$X.js", "gallery.js"],
+    "run_at": "document_idle",
+    "all_frames": false
+  }],
   "permissions": [
     "http://*/"
   ]
