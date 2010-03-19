@@ -1,7 +1,7 @@
 {
   "name": "Instant Gallery",
-  "version": "0.3",
-  "description": "Browse all pictures linnked from a web page at once via the arrow keys.",
+  "version": "0.4",
+  "description": "Browse all pictures linked from a web page at once via the arrow keys.",
   "icons": {
     "48":  "hannah-48.png",
     "128": "hannah-128.png"
