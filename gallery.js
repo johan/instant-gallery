@@ -1,12 +1,12 @@
-var links = $x('//a[@href and .//img]'), self = this, urls, count, at, off;
-if (links.length) setTimeout(function wait_for_content_scripts() {
-  chrome.extension.sendRequest({
-    urls: links.map(function url(a) { return a.href; })
-  });
-  //chrome.extension.onRequest.addListener(onRequest);
-}, 200);
-
-try {
+var self = this, links, urls, count, at, off;
+setTimeout(function wait_for_content_scripts() { try {
+  links = $x('//a[@href and .//img]');
+  if (links.length) {
+    chrome.extension.sendRequest({
+      urls: links.map(function url(a) { return a.href; })
+    });
+    //chrome.extension.onRequest.addListener(onRequest);
+  }
   chrome.extension.onConnect.addListener(function(port) {
     console.assert(port.name == 'cmd');
     port.onMessage.addListener(function(json) {
@@ -15,7 +15,7 @@ try {
       } catch(e) { alert(e.message); }
     });
   });
-} catch(e) { alert('instant gallery: '+ e.message); }
+} catch(e) { alert('instant gallery: '+ e.message); }}, 200);
 
 function cmd_list(json) {
   count = json.count;
