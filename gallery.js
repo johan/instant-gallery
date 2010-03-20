@@ -1,10 +1,10 @@
 var links = $x('//a[@href and .//img]'), self = this, urls, count, at, off;
-if (links.length) {
+if (links.length) setTimeout(function wait_for_content_scripts() {
   chrome.extension.sendRequest({
     urls: links.map(function url(a) { return a.href; })
   });
   //chrome.extension.onRequest.addListener(onRequest);
-}
+}, 200);
 
 try {
   chrome.extension.onConnect.addListener(function(port) {
@@ -92,7 +92,8 @@ function show(i) {
     var d = document.createElement('div');
     document.body.appendChild(d);
     d.style.cssText = 'width: 100%; height: 100%; position: absolute; top: 0;' +
-      'left: 0; background: #000; margin: 0 auto; text-align: center;';
+      'left: 0; background: #000; z-index: 2147483646; text-align: center; ' +
+      'margin: 0 auto;';
     var img = show.img = document.createElement('img');
     return d.appendChild(img);
   })();
