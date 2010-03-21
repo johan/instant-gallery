@@ -65,9 +65,12 @@ function cmd_zoom() {
   show();
 }
 
-function kill() {
+function cmd_kill(code) {
   urls[at] = undefined;
-  cmd_next();
+  if (code == 8)
+    cmd_prev();
+  else
+    cmd_next();
 }
 
 function show_next(first, add) {
@@ -125,7 +128,7 @@ var commands = {
   'b': 'prev', 37: 'prev',   // arrow left
   ' ': 'next', 39: 'next',   // arrow right
                27: 'toggle', // escape
-               46: 'kill',   // delete
+    8: "kill", 46: 'kill',   // backspace / delete
   'F': 'full',
   'Z': 'zoom',
   'N': 'zoom'
@@ -136,10 +139,11 @@ function key_handler(e) {
       /^(textarea|input|button|select)$/i.test(e.target.nodeName))
     return true;
 
-  var cmd = commands[e.keyCode] || commands[String.fromCharCode(e.which)];
+  var key = String.fromCharCode(e.which), code = e.keyCode;
+  var cmd = commands[code] || commands[key];
   if (cmd) {
     e.preventDefault();
-    self['cmd_'+ cmd]();
-  }
+    self['cmd_'+ cmd](code, key);
+  } // else prompt(String.fromCharCode(e.which), e.keyCode);
   return !cmd;
 }
