@@ -1,4 +1,4 @@
-var self = this, links, urls, count, at, off;
+var self = this, links, urls = [], count = 0, at, off, imgs = [];
 setTimeout(function wait_for_content_scripts() { try {
   links = $x('//a[@href and .//img]');
   if (links.length) {
@@ -8,7 +8,7 @@ setTimeout(function wait_for_content_scripts() { try {
     //chrome.extension.onRequest.addListener(onRequest);
   }
   chrome.extension.onConnect.addListener(function(port) {
-    console.assert(port.name == 'cmd');
+    console.assert(port.name == 'page action');
     port.onMessage.addListener(function(json) {
       try {
         self['cmd_'+ json.type](json);
@@ -17,20 +17,18 @@ setTimeout(function wait_for_content_scripts() { try {
   });
 } catch(e) { alert('instant gallery: '+ e.message); }}, 200);
 
-function cmd_list(json) {
-  count = json.count;
-  urls = json.urls;
-  show_next('first');
-}
-
 function cmd_image(json) {
-  count++;
+  if (!count++) {
+    document.addEventListener('keydown', key_handler, true);
+  }
   urls[json.n] = json.url;
-  show_next('first');
+  var img = document.createElement('img');
+  img.src = json.url; // preload for speed
+  imgs[json.n] = img; // and then cache it
 }
 
 function cmd_toggle() {
-  if (off) cmd_show(); else cmd_hide();
+  if (off || off === undefined) cmd_show(); else cmd_hide();
 }
 
 function cmd_show() {
@@ -45,11 +43,11 @@ function cmd_hide() {
 }
 
 function cmd_next() {
-  show_next();
+  show(get_next(1));
 }
 
 function cmd_prev() {
-  show_next(false, -1);
+  show(get_next(-1));
 }
 
 var zoom = 0, full = 0; // view modes
@@ -85,24 +83,19 @@ function cmd_kill(code) {
     cmd_next();
 }
 
-function show_next(first, add) {
-  if (first && at !== undefined) return;
+function get_next(add) {
   var max = links.length, left = max, i = at || -1;
   while (left--) {
     i = (i + (add || 1) + max) % max;
     var url = urls[i];
     if (url) {
-      show(at = i);
-      break;
+      return at = i;
     }
-  }
-  if (first) {
-    document.addEventListener('keydown', key_handler, true);
   }
 }
 
 function show(i) {
-  if (undefined === i) i = at;
+  if (undefined === i) i = 'undefined' == typeof at ? get_next() : at;
   var img = show.img || (function() {
     var d = document.createElement('div');
     document.body.appendChild(d);
@@ -151,17 +144,24 @@ var commands = {
 };
 
 function key_handler(e) {
-  if (off || e.shiftKey || e.altKey || e.ctrlKey || e.metaKey ||
+  if (e.shiftKey || e.altKey || e.ctrlKey || e.metaKey ||
       /^(textarea|input|button|select)$/i.test(e.target.nodeName))
-    return true;
-
+    return;
+  try {
   var key = String.fromCharCode(e.which), code = e.keyCode;
   var cmd = commands[code] || commands[key];
-  if (cmd) {
+  if (cmd && is_on(cmd)) {
     e.preventDefault();
     cmd = 'string' == typeof cmd ? [cmd] : cmd.concat();
     var fn = self['cmd_'+ cmd.shift()];
     fn.apply(self, cmd.concat(code, key));
   }
-  return !cmd;
+  } catch(e) { alert(e.messag); }
+  return;
+}
+
+function is_on(cmd) {
+  if ('boolean' == typeof off) return !off || 'toggle' === cmd;
+  if ('string' !== typeof cmd) return false;
+  return /^(prev|next)$/.test(cmd) && !(off = false);
 }

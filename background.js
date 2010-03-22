@@ -4,9 +4,10 @@ var galleries = { // tab id : { urls: array of image urls, count: n, port: p }
 };
 
 // page has some links that may be images to show
-function onRequest(request, sender, sendResponse) {
+function onRequest(request, sender, sendResponse) { try {
   triageURLs(sender.tab.id, request.urls);
   sendResponse({}); // (cleans connection)
+  } catch(e) { alert(e.message); }
 }
 
 // HTTP HEAD all links; filter by content-type: image/*
@@ -27,14 +28,14 @@ function got_headers(tabId, n, headers, url) {
 // start populating the gallery with all found images
 function collect_image(tabId, url, n) {
   var pics = galleries[tabId];
-  var urls = pics.urls;
-  var first = !urls.length;
-  urls[n] = url; // keep page's order
+  if (!pics) return;
+  var first = !pics.urls.length;
   if (first) {
     pics.count = 1;
+    pics.port = open_port(tabId);
     galleries[tabId] = pics;
     chrome.pageAction.show(tabId);
-    chrome.pageAction.onClicked.addListener(showGallery);
+    chrome.pageAction.onClicked.addListener(show_gallery);
   } else {
     pics.count++;
   }
@@ -43,31 +44,25 @@ function collect_image(tabId, url, n) {
              ' (in tab ' + tabId + ')',
     tabId: tabId
   });
-  if (pics.port)
-    pics.port.postMessage({ type: 'image', url: url, n: n });
+  pics.port.postMessage({ type: 'image', url: pics.urls[n] = url, n: n });
 }
 
 function register_gallery_listener(id) {
-  var old = galleries[id];
-  if (old) chrome.pageAction.onClicked.removeListener(showGallery);
+  //var old = galleries[id];
+  //if (old) chrome.pageAction.onClicked.removeListener(show_gallery);
   galleries[id] = { urls: [] };
 }
 
+function open_port(id) {
+  var port = chrome.tabs.connect(id, { name: 'page action' });
+  port.onDisconnect.addListener(function() { delete galleries[id]; });
+  return port;
+}
+
 // our icon has been clicked
-function showGallery(tab) {
+function show_gallery(tab) {
   try {
-  var id = tab.id;
-  var pics = galleries[id];
-  var json = pics.port ? { type: 'toggle' } :
-                         { type: 'list', urls: pics.urls, count: pics.count };
-  var port = pics.port = pics.port || (function() {
-    var port = chrome.tabs.connect(id, { name: 'cmd' });
-    port.onDisconnect.addListener(function(json) {
-      register_gallery_listener(id);
-    });
-    return port;
-  })();
-  port.postMessage(json);
+    galleries[tab.id].port.postMessage({ type: 'toggle' });
   } catch(e) { alert('instant gallery: '+ e.message); }
 }
 
